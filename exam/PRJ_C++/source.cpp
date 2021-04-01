@@ -1,6 +1,7 @@
 #include<iostream>
 #include <utility>
 #include <memory>
+#include <assert.h>
 //#include "iterator_bst.cpp"
 //#include "node.cpp"
 
@@ -104,7 +105,9 @@ class bst{
     };
     // ####################### END ITERATOR CLASS DEF
 
+    // PRIVATE MEMBERS OF BST
     // the bst needs a node and a ptr to the head
+    std::size_t num_of_nodes{0};
     node _node;
     std::unique_ptr<node> head;
     _iterator<const t_k> it{cbegin()};
@@ -142,18 +145,20 @@ class bst{
             // at every iteration of the while cicle we 
             // visit a level of the bst until we reach the leaves
 
-            if ( OP(std::forward<O>(x.first),tmp->_pair.first) ){      // key_to_be_inserted < key_in_bst
-                if(tmp->left == nullptr){                              // if we are at a leaf (wrt insertion)
-                    tmp->left = new node{std::forward<O>(x.first)};    // append a new node
-                    inserted = true;                                   // notify we are done
-                    return std::pair<iterator, bool>{tmp->left,inserted};   // return
+            if ( OP(std::forward<O>(x.first),tmp->_pair.first) ){          // key_to_be_inserted < key_in_bst
+                if(tmp->left == nullptr){                                  // if we are at a leaf (wrt insertion)
+                    tmp->left = new node{std::forward<O>(x.first)};        // append a new node
+                    inserted = true;                                       // notify we are done
+                    num_of_nodes += 1;                                     // update
+                    return std::pair<iterator, bool>{tmp->left,inserted};  // return
                 }
                 tmp = tmp->left;                                       // otherwise we just move to the left
             }
-            else{                                                      // key_to_be_inserted > key_in_bst
-                if(tmp->right == nullptr){                             // if we are at a leaf (wrt insertion)
-                    tmp->right = new node{std::forward<O>(x.first)};   // append a new node
-                    inserted = true;                                   // notify we are done
+            else{                                                           // key_to_be_inserted > key_in_bst
+                if(tmp->right == nullptr){                                  // if we are at a leaf (wrt insertion)
+                    tmp->right = new node{std::forward<O>(x.first)};        // append a new node
+                    inserted = true;                                        // notify we are done
+                    num_of_nodes += 1;                                      // update
                     return std::pair<iterator, bool>{tmp->right,inserted};  // return
                 }
                 tmp = tmp->right;
@@ -171,9 +176,10 @@ public:
 
     // mv sem:
     // mv ctor
-    bst(bst&& x) noexcept: _node{std::move(x._node)}, head{std::move(x.head)} {}
+    bst(bst&& x) noexcept: _node{std::move(x._node)}, head{std::move(x.head)}, num_of_nodes{std::move(x.num_of_nodes)} {}
     // mv assignment
     bst& operator==(bst&& x) noexcept{
+        num_of_nodes = std::move(x.num_of_nodes);
         head = std::move(x.head);
         _node = std::move(x._node);
         return *this;
@@ -182,6 +188,7 @@ public:
     // xp sem:
     // cp ctor
     bst(const bst& x){
+        num_of_nodes = x.num_of_nodes;
         if(x.head){                     
             head.reset(new node{x.head});   // as fare as x is not an empty bst I copy it by
         }                                   // calling recursively the node ctor
@@ -241,7 +248,8 @@ public:
     std::pair<iterator, bool> insert(std::pair<const t_k,t_v>&& x)      {return _insert(x);}
 
     // subscripting operator
-    const t_k& operator[](const std::size_t i)const noexcept {return *(it+i);} 
+    t_k& operator[](const std::size_t i) noexcept {assert(i < num_of_nodes); return *(it+i);}
+    const t_k& operator[](const std::size_t i) const noexcept {assert(i < num_of_nodes); return *(it+i);} 
     // since this is only for reading I can prepend the const keyword
 
     // put to operator
