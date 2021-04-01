@@ -81,6 +81,15 @@ class bst{
         return *this;
         }
 
+        // overloading of + operator
+        // to be later used in the subscripting iperator of bst
+        _iterator& operator+(const std::size_t i) {
+            for(std::size_t j{0}; j < i; j++){
+                *(this)++;
+            }
+            return +(this);
+        }
+
         pointer operator->() noexcept{return &**this;}
         reference operator*() const noexcept{return current->_pair.first;} // we are interested in the key 
                                                                        // dereferencing iterator must 
@@ -98,6 +107,7 @@ class bst{
     // the bst needs a node and a ptr to the head
     node _node;
     std::unique_ptr<node> head;
+    _iterator<const t_k> it{cbegin()};
 
 
     using iterator = _iterator<t_k>;
@@ -229,6 +239,10 @@ public:
     // such that we wrote one function for two purposes
     std::pair<iterator, bool> insert(const std::pair<const t_k,t_v>& x) {return _insert(x);}
     std::pair<iterator, bool> insert(std::pair<const t_k,t_v>&& x)      {return _insert(x);}
+
+    // subscripting operator
+    const t_k& operator[](const std::size_t i)const noexcept {return *(it+i);} 
+    // since this is only for reading I can prepend the const keyword
 
     // put to operator
     friend
