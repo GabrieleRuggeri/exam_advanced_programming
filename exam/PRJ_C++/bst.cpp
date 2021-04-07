@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <memory>
 #include <iterator>
 #include <assert.h>
@@ -296,9 +297,119 @@ public: // BST INTERFACE
     // CLEAR
     void clear(){head.reset();}
 
+    bool _is_empty()const noexcept {return head == nullptr;}
+
+    // ERASE
+    void erase(const k_t& x){
+    
+        if(find(x)!=iterator{nullptr}){         // check that the key is present in the bst
+            auto cmp = OP{};
+            auto tmp = head.get();
+            node* starting_node = head.get();                // ptr to the node we must delete
+
+            // look for it
+            bool still_looking = true;
+            while (still_looking)     
+            {
+                if(tmp->_pair.first == x){  // found it
+                    starting_node = tmp;
+                    still_looking = false;
+                }
+                else{
+                    // otherwise move to the right or left child
+                    if( cmp(tmp->_pair.first,x) ){
+                        tmp = tmp->right.get();
+                    }
+                    else{ tmp = tmp->left.get();}
+                }
+            }
+
+            // starting_node is now pointing to
+            // the node we want to delete; let's cover all the 
+            // possible cases
+
+            // CASE ONE: THE NODE IS A LEAF
+            if(!starting_node->left && !starting_node->right){  // check the node has no children
+                auto key_of_parent = starting_node->parent->_pair.first;
+                auto parent = starting_node->parent;
+                // we release and reset the pointer of the parent node
+                if(cmp(x,key_of_parent)){parent->left.release();parent->left.reset();} // the node to delete is a left child
+                else{parent->right.release();parent->right.reset();}                   // the node to delete is a right child   
+            }
+
+
+            // CASE TWO: THE NODE HAS JUST ONE CHILD
+            if((starting_node->left.get()==nullptr && starting_node->right.get()!=nullptr) || (starting_node->left.get()!=nullptr && starting_node->right.get()==nullptr))          // check the node has only one child
+            {
+                if(starting_node->left){                                // if the child is on the left
+                    auto left_child = starting_node->left.release();    // ptr to unique child
+                    starting_node->left.reset();
+                    auto parent = starting_node->parent;                // ptr to parent node
+
+                    auto key_of_parent = parent->_pair.first;
+                    if(cmp(x,key_of_parent)){parent->left.release();parent->left.reset(left_child); left_child->parent = parent;}  // if the starting node is on the left of its parent
+                    else{parent->right.release();parent->right.reset(left_child); left_child->parent = parent;}                     // otherwise on the right
+                }
+                else{                                                   // if the child is on the right
+                    auto right_child = starting_node->right.release();  // ptr to unique child
+                    auto parent = starting_node->parent;                // ptr to parent node
+
+                    auto key_of_parent = parent->_pair.first;
+                    if(cmp(x,key_of_parent)){parent->left.release();parent->left.reset(right_child); right_child->parent = parent;} // if the starting node is on the left of its parent
+                    else{parent->right.release();parent->right.reset(right_child); right_child->parent = parent;}                    // otherwise on the right
+                }
+            }
+
+            // LAST CASE: THE NODE HAS TWO CHILDREN
+            if(starting_node->left && starting_node->right){
+                auto swap_node = starting_node->right.get();
+                while(swap_node->left){                           
+                    swap_node = swap_node->left.get();
+                }
+                auto parent = starting_node->parent;
+
+                if(swap_node->parent->_pair.first == x){starting_node->right.release();}
+                else{swap_node->parent->left.release();}
+                
+
+                if(swap_node->right){
+                    swap_node->right->parent = swap_node->parent;
+                }
+                
+                swap_node->parent->left.reset(swap_node->right.release());
+                
+                if(starting_node->left){
+                    starting_node->left->parent = swap_node;
+                }
+                
+            
+                auto key_of_parent = parent->_pair.first;
+                if(cmp(x,key_of_parent)){// if the starting node is on the left of its parent
+                    parent->left.release();
+                    parent->left.reset(swap_node);
+                    swap_node->parent = parent; 
+                    swap_node->right.reset(starting_node->right.release());
+                    swap_node->left.reset(starting_node->left.release());
+                } 
+                else{// otherwise on the right
+                    parent->right.release();
+                    parent->right.reset(swap_node); 
+                    swap_node->parent = parent;
+                    swap_node->right.reset(starting_node->right.release());
+                    swap_node->left.reset(starting_node->left.release());
+                }                    
+            }
+        }
+        // in the end if the key is not present there is no
+        // node that must be eliminated
+        else{std::cerr << "ERROR: NO NODE WITH KEY = " << x << std::endl;}
+    }
+
     // PUT TO OPERATOR
     friend
     std::ostream& operator<<(std::ostream& os, const bst& x){
+        if(x._is_empty()){std::cerr << "ERROR: --EMPTY BST--\n"; return os;}
+
         for(auto& key : x){
             os << key << " ";
         }
@@ -307,7 +418,14 @@ public: // BST INTERFACE
     }
 
     v_t& operator[](const k_t& x) {
-        ASSERT(find(x) != iterator{nullptr}, "key " << x <<  " is not present");
+        if(find(x) != iterator{nullptr}){   // if the key is already present
+            auto address = find(x);         // we return the associated value
+            return address.value();
+        }
+        // otherwise we insert a new node with the
+        // requested key and the default value of v_t
+        auto def_value = v_t{};
+        emplace(x,def_value);
         auto address = find(x);
         return address.value();
     }
@@ -315,8 +433,15 @@ public: // BST INTERFACE
     
     v_t& operator[](k_t&& x) {
         auto tmp{std::move(x)};
-        ASSERT(find(x) != iterator{nullptr}, "key " << x <<  " is not present");
-        auto address = find(tmp);
+        if(find(tmp) != iterator{nullptr}){   // if the key is already present
+            auto address = find(tmp);         // we return the associated value
+            return address.value();
+        }
+        // otherwise we insert a new node with the
+        // requested key and the default value of v_t
+        auto def_value = v_t{};
+        emplace(x,def_value);
+        auto address = find(x);
         return address.value();
     }
 
@@ -334,6 +459,7 @@ public: // BST INTERFACE
 int main(){
 
     bst<int,int> test;
+    //std::cout << test << std::endl;
     test.insert(std::pair<int,int>{8,2});
     test.insert(std::pair<int,int>{3,2});
     test.insert(std::pair<int,int>{1,2});
@@ -347,17 +473,30 @@ int main(){
     std::cout << "test before copy" << std::endl;
     std::cout << test << std::endl;
 
-    std::cout << "instanciated a copy of test named cp and using emplace (2,2) was inserted" << std::endl;
-    bst<int,int> cp = test;
+    test.erase(13);
+
+    std::cout << "\nafter erase\n" << std::endl;
+    std::cout << test << std::endl;
+
+    /*
+    std::cout << "\ninstanciated a copy of test named cp and using emplace: (2,2) was inserted" << std::endl;
+    bst<int,int> cp{test};
     cp.emplace(2,2);
 
-    std::cout << "test after insertion in cp" << std::endl;
-    std::cout << test << std::endl;
     std::cout << "cp" << std::endl;
     std::cout << cp << std::endl;
-
+    std::cout << "test after insertion in cp" << std::endl;
+    std::cout << test << std::endl;
     std::cout << "test[8] = " << test[8] << std::endl;
-    std::cout << test[50] << std::endl;
+    std::cout << "test after test[8]" << std::endl;
+    std::cout << test << std::endl;
+    std::cout << "test[50] = " << test[50] << std::endl;
+    std::cout << "test after test[50]" << std::endl;
+    std::cout << test << std::endl;
+
+    std::cout << "cp after all" << std::endl;
+    std::cout << cp << std::endl;
+    */
     
 
 
