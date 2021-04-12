@@ -303,6 +303,43 @@ public: // BST INTERFACE
     // CLEAR
     void clear() noexcept {head.reset();}
 
+    // BALANCE
+    void balance(){
+        std::vector<std::pair<k_t,v_t>> ordered;
+
+        // fullfill ordered with inorder elements of the bst
+        for(iterator i = begin(); i != end() ; ++i){
+            ordered.emplace_back(*i, i.value());
+        }
+        
+        // clear the bst (*this) 
+        clear();
+        // rebuild the bst
+        head.reset(balancing(ordered, 0, ordered.size()-1, nullptr));
+    }
+
+
+    node* balancing(std::vector<std::pair<k_t,v_t>> v, int start, int end, node* parent){
+        // Base Case 
+        if (start > end) 
+        return nullptr; 
+  
+        // Get the median element and make a node out of it (head)
+        int median = (start + end)/2; 
+        node* tmp = new node(v[median]); 
+        tmp->parent = parent;
+
+
+        // Recursively construct the left subtree 
+        // and make it left child  
+        tmp->left.reset(balancing(v, start, median - 1, tmp)); 
+  
+        // Recursively construct the right subtree 
+        // and make it right child 
+        tmp->right.reset(balancing(v, median + 1, end, tmp)); 
+  
+        return tmp; 
+    }
 
     bool _is_empty()const noexcept {return head == nullptr;}
 
@@ -499,10 +536,12 @@ int main(){
     test.clear();
     std::cout << "after clear() on test" << std::endl;
     std::cout << "test\n" << test << "\ncp\n" << cp << std::endl;
-    
-    
 
+    cp.balance();
+    std::cout << "after balancing cp" << std::endl;
+    std::cout << cp << "\n" << cp[81] <<  std::endl;
 
-    
+    std::cout << "test\n" << test << std::endl;
+
     return 0;
 }
