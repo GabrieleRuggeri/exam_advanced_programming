@@ -2,6 +2,7 @@
 #include <utility>
 #include <memory>
 #include <iterator>
+#include <vector>
 #include <assert.h>
 
 #ifndef NDEBUG
@@ -37,24 +38,26 @@ struct node{
     // the ptrs are okay with default value
     explicit node(const std::pair<k_t,v_t>& pair): _pair(pair) {}           // the implicit conversion is not necessary    
     explicit node(std::pair<k_t,v_t>&& pair): _pair(std::move(pair)) {}     // the implicit conversion is not necessary
-    explicit node(const std::unique_ptr<node>& x): _pair{x->_pair}{
-            // if needed connect it with its parent node
-            if(x->parent){
-                parent = x->parent;
-            }
+
+    // this is a custom ctor that takes as input a unique ptr to a node that must me copied
+    // and a raw ptr to it's supposed to be its parent. It is a recursive
+    // ctor that will be later used in the copy semantics of the bst
+    explicit node(const std::unique_ptr<node>& x, node* parent): _pair{x->_pair}, parent{parent}{
             // take care of left and right children:
             // on the right:
             if(x->right){
-                right.reset(new node{x->right});
+                right.reset(new node{x->right,&*this});     // the children of the node have the node itself as parent
             }
-            else{right.reset();}
+            else{right.reset();}                            // for sake of compliteness
             // on the left:
             if(x->left){
-                left.reset(new node{x->left});
+                left.reset(new node{x->left,&*this});
             }
-            else{left.reset();}
+            else{left.reset();}                             // for sake of compliteness
+
             // the idea is to call recursively the ctor (of node) on every side untill we meet a nullptr
         }
+
     // default destructor is okay since no mem. acquisition appears 
     // in the ctors
     ~node() = default;
@@ -80,7 +83,7 @@ public:
     // overloading of pre-increment operator:
     _iterator& operator++(){
         k_t starting_key = **this; // the key of the node the iterator points to before it is increased
-        auto cmp = OP{};           // instance of std::less<k_t>(std::greater<k_t>)
+        auto cmp = OP{};           
 
         // the iterator must increase such that when we traverse the bst
         // we do in a way such that the keys appear ordered (wrt to OP)
@@ -104,8 +107,11 @@ public:
         // is the right most one we return nullptr
         // (it has no next node so the output iterator is the same as end() output)
         else{
+            // current is the root node in a bst with just no right child
+            if(!current->parent){current = nullptr; return *this;}
+
             current = current->parent;                           // mv into parent node
-                while(cmp(current->_pair.first,starting_key)){   // repeat untill a bigger key is met
+                while(cmp(current->_pair.first,starting_key)){   // repeat until a bigger key is met
                     if(!(current->parent)){                      // this covers the case in which the starting node is the right most one
                         current = nullptr;
                         break;
@@ -224,7 +230,7 @@ public: // BST INTERFACE
     //  cp ctor
     bst(const bst& x){
         if(x.head){                     
-            head.reset(new node{x.head});   // as fare as x is not an empty bst I copy it by
+            head.reset(new node{x.head, x.head->parent});   // as far as x is not an empty bst I copy it by
         }                                   // calling recursively the node ctor on line 24
     }
     //  cp assignment
@@ -295,7 +301,8 @@ public: // BST INTERFACE
     }
 
     // CLEAR
-    void clear(){head.reset();}
+    void clear() noexcept {head.reset();}
+
 
     bool _is_empty()const noexcept {return head == nullptr;}
 
@@ -304,8 +311,8 @@ public: // BST INTERFACE
     
         if(find(x)!=iterator{nullptr}){         // check that the key is present in the bst
             auto cmp = OP{};
-            auto tmp = head.get();
-            node* starting_node = head.get();                // ptr to the node we must delete
+            auto tmp = head.get();              // auxiliary variable to traverse top-bottom the bst
+            node* starting_node = head.get();   // ptr to the node we must delete
 
             // look for it
             bool still_looking = true;
@@ -339,10 +346,10 @@ public: // BST INTERFACE
 
 
             // CASE TWO: THE NODE HAS JUST ONE CHILD
-            if((starting_node->left.get()==nullptr && starting_node->right.get()!=nullptr) || (starting_node->left.get()!=nullptr && starting_node->right.get()==nullptr))          // check the node has only one child
+            if((!starting_node->left && starting_node->right) || (starting_node->left && !starting_node->right))          // check the node has only one child
             {
                 if(starting_node->left){                                // if the child is on the left
-                    auto left_child = starting_node->left.release();    // ptr to unique child
+                    auto left_child = starting_node->left.release();    // ptr to the unique child
                     starting_node->left.reset();
                     auto parent = starting_node->parent;                // ptr to parent node
 
@@ -362,47 +369,40 @@ public: // BST INTERFACE
 
             // LAST CASE: THE NODE HAS TWO CHILDREN
             if(starting_node->left && starting_node->right){
+                
+                // find the right most node between nodes
+                // that are on the right of the node we must delete
+                // and exchange key and value; then delete the old node
+
+                // we move to the right and then iterate over the left children
                 auto swap_node = starting_node->right.get();
                 while(swap_node->left){                           
                     swap_node = swap_node->left.get();
                 }
-                auto parent = starting_node->parent;
 
-                if(swap_node->parent->_pair.first == x){starting_node->right.release();}
-                else{swap_node->parent->left.release();}
-                
+                // exchange keys and values (swap_node is no needed anymore)
+                starting_node->_pair = std::move(swap_node->_pair);
 
-                if(swap_node->right){
-                    swap_node->right->parent = swap_node->parent;
+                // since swap_node will now be eliminated we will
+                // reset the ptr that points to it but we have to consider
+                // two cases:
+                // swap_node is not the right child of the deleted node,
+                // in this case 
+                if(swap_node->parent != starting_node){
+                    auto tmp = swap_node->right.release(); // swap_node may have a right subtree
+                    swap_node->parent->left.reset(tmp);    // attach the subtree to the parent
                 }
-                
-                swap_node->parent->left.reset(swap_node->right.release());
-                
-                if(starting_node->left){
-                    starting_node->left->parent = swap_node;
+                // otherwise we must
+                else{
+                    auto tmp = swap_node->right.release();
+                    swap_node->parent->right.reset(tmp);
                 }
-                
-            
-                auto key_of_parent = parent->_pair.first;
-                if(cmp(x,key_of_parent)){// if the starting node is on the left of its parent
-                    parent->left.release();
-                    parent->left.reset(swap_node);
-                    swap_node->parent = parent; 
-                    swap_node->right.reset(starting_node->right.release());
-                    swap_node->left.reset(starting_node->left.release());
-                } 
-                else{// otherwise on the right
-                    parent->right.release();
-                    parent->right.reset(swap_node); 
-                    swap_node->parent = parent;
-                    swap_node->right.reset(starting_node->right.release());
-                    swap_node->left.reset(starting_node->left.release());
-                }                    
             }
         }
-        // in the end if the key is not present there is no
-        // node that must be eliminated
-        else{std::cerr << "ERROR: NO NODE WITH KEY = " << x << std::endl;}
+
+        else{
+            std::cerr << "ERROR: no element has key = " << x << std::endl;
+        }
     }
 
     // PUT TO OPERATOR
@@ -430,7 +430,6 @@ public: // BST INTERFACE
         return address.value();
     }
     
-    
     v_t& operator[](k_t&& x) {
         auto tmp{std::move(x)};
         if(find(tmp) != iterator{nullptr}){   // if the key is already present
@@ -445,10 +444,6 @@ public: // BST INTERFACE
         return address.value();
     }
 
-
-
-
-
 };
 
 
@@ -459,7 +454,9 @@ public: // BST INTERFACE
 int main(){
 
     bst<int,int> test;
-    //std::cout << test << std::endl;
+    std::cout << "bst after creation" << std::endl;
+    std::cout << test << std::endl;
+
     test.insert(std::pair<int,int>{8,2});
     test.insert(std::pair<int,int>{3,2});
     test.insert(std::pair<int,int>{1,2});
@@ -470,15 +467,16 @@ int main(){
     test.insert(std::pair<int,int>{13,2});
     test.insert(std::pair<int,int>{14,2});
 
+
     std::cout << "test before copy" << std::endl;
     std::cout << test << std::endl;
 
-    test.erase(13);
+    test.erase(8);
 
     std::cout << "\nafter erase\n" << std::endl;
     std::cout << test << std::endl;
 
-    /*
+    
     std::cout << "\ninstanciated a copy of test named cp and using emplace: (2,2) was inserted" << std::endl;
     bst<int,int> cp{test};
     cp.emplace(2,2);
@@ -496,7 +494,12 @@ int main(){
 
     std::cout << "cp after all" << std::endl;
     std::cout << cp << std::endl;
-    */
+
+
+    test.clear();
+    std::cout << "after clear() on test" << std::endl;
+    std::cout << "test\n" << test << "\ncp\n" << cp << std::endl;
+    
     
 
 
