@@ -36,19 +36,19 @@ struct node{
 
     // the only ctors we need take an std::pair<k_t,v_t> as input
     // the ptrs are okay with default value
-    explicit node(const std::pair<k_t,v_t>& pair): _pair(pair) {}           // the implicit conversion is not necessary    
-    explicit node(std::pair<k_t,v_t>&& pair): _pair(std::move(pair)) {}     // the implicit conversion is not necessary
+    explicit node(const std::pair<k_t,v_t>& pair) noexcept: _pair(pair) {}           // the implicit conversion is not necessary    
+    explicit node(std::pair<k_t,v_t>&& pair) noexcept: _pair(std::move(pair)) {}     // the implicit conversion is not necessary
 
     // this is a custom ctor that takes as input a unique ptr to a node that must me copied
-    // and a raw ptr to it's supposed to be its parent. It is a recursive
+    // and a raw ptr to what it's supposed to be its parent. It is a recursive
     // ctor that will be later used in the copy semantics of the bst
-    explicit node(const std::unique_ptr<node>& x, node* parent): _pair{x->_pair}, parent{parent}{
+    explicit node(const std::unique_ptr<node>& x, node* parent)noexcept: _pair{x->_pair}, parent{parent}{
             // take care of left and right children:
             // on the right:
             if(x->right){
                 right.reset(new node{x->right,&*this});     // the children of the node have the node itself as parent
             }
-            else{right.reset();}                            // for sake of compliteness
+            else{right.reset();}                            // for sake of completeness
             // on the left:
             if(x->left){
                 left.reset(new node{x->left,&*this});
@@ -68,6 +68,7 @@ template <typename O>
 class _iterator{
     using node = bst<k_t,v_t,OP>::node;
     node* current;
+    OP cmp{};
     // our iterator is basically a (raw)ptr to node
 
 public:
@@ -77,13 +78,12 @@ public:
     using reference = value_type&;
     using pointer = value_type*;
 
-    explicit _iterator(node* x): current{x} {}  // the implicit conversion is not necessary
+    explicit _iterator(node* x) noexcept: current{x} {}  // the implicit conversion is not necessary
     ~_iterator() = default;
 
     // overloading of pre-increment operator:
-    _iterator& operator++(){
-        k_t starting_key = **this; // the key of the node the iterator points to before it is increased
-        auto cmp = OP{};           
+    _iterator& operator++() noexcept{
+        k_t starting_key = **this; // the key of the node the iterator points to before it is increased           
 
         // the iterator must increase such that when we traverse the bst
         // we do in a way such that the keys appear ordered (wrt to OP)
@@ -92,7 +92,7 @@ public:
         // is always on the right of the current one.
 
         // first case: the current node has a right child:
-        // we move into it and then visit all the left child nodes so that thw final
+        // we move into it and then visit all the left child nodes so that the final one
         // will be the node with the smallest key that is also bigger than the key
         // of the node we started from
         if(current->right){
@@ -107,15 +107,17 @@ public:
         // is the right most one we return nullptr
         // (it has no next node so the output iterator is the same as end() output)
         else{
-            // current is the root node in a bst with just no right child
+            // if current is the root node in a bst with just no right child
             if(!current->parent){current = nullptr; return *this;}
-
+            // otherwise current is not the root
             current = current->parent;                           // mv into parent node
-                while(cmp(current->_pair.first,starting_key)){   // repeat until a bigger key is met
-                    if(!(current->parent)){                      // this covers the case in which the starting node is the right most one
-                        current = nullptr;
+                while(cmp(current->_pair.first,starting_key))    // repeat until a bigger key is met
+                {
+                    if(!(current->parent)){                      // this covers the case in which
+                        current = nullptr;                       //  the starting node is the right most one
                         break;
                         }
+
                     current = current->parent;                   // recursively visit back the parent node
                 }
         } 
@@ -123,7 +125,7 @@ public:
     }
 
     // overloading of post-increment operator:
-    _iterator operator++(int){
+    _iterator operator++(int) noexcept{
         auto tmp{*this};
         ++(*this);
         return tmp;
@@ -137,6 +139,8 @@ public:
     v_t& value() {return current->_pair.second;}
     const v_t& value() const {return current->_pair.second;}
 
+    node* where() const noexcept{return current;}
+
     // overload of == and != operators
     friend
     bool operator==(const _iterator& a, const _iterator& b) noexcept {
@@ -148,6 +152,9 @@ public:
 
     // PRIVATE MEMBERS
     std::unique_ptr<node> head;
+    // instance of the total relation order that rules the bst
+    // this is alway initialized to its standard value
+    OP cmp{}; 
     // the bst class just needs a (unique)ptr to the head of the tree
 
     using iterator = _iterator<k_t>;
@@ -174,7 +181,6 @@ public:
     std::pair<iterator, bool> _insert(O&& x){
         auto pair = std::forward<O>(x);
         auto tmp = head.get();
-        auto cmp = OP{};
         auto new_node{new node{pair}};
 
         // base case: empty bst - no check must be performed
@@ -191,7 +197,7 @@ public:
         // we are sure that we will insert a new node
         else{
             while(tmp){                                  // traverse the bst top to bottom until we get to the leaves
-                new_node->parent = tmp;                  // at every step take node of the "momentaneous" parent (we don't know when the loop ends)
+                new_node->parent = tmp;                  // at every step take note of the "momentaneous" parent (we don't know when the loop ends)
                 if( cmp(tmp->_pair.first, pair.first) ){ // explore the two possible cases for the new key
                     if(!tmp->right.get()){               // if we reach a leaf
                         tmp->right.reset(new_node);      // attach the new node
@@ -219,22 +225,24 @@ public: // BST INTERFACE
 
     // mv sem:
     //  mv ctor:
-    bst(bst&& x) noexcept: head{std::move(x.head)} {}
+    bst(bst&& x) noexcept: head{std::move(x.head)}, cmp{std::move(x.cmp)} {}
     //  mv assignment
     bst& operator==(bst&& x) noexcept{
         head = std::move(x.head);
+        cmp = std::move(x.cmp);
         return *this;
     }
     
     // cp sem:
     //  cp ctor
-    bst(const bst& x){
-        if(x.head){                     
+    bst(const bst& x) noexcept{
+        if(x.head){    
+            cmp = x.cmp;                 
             head.reset(new node{x.head, x.head->parent});   // as far as x is not an empty bst I copy it by
-        }                                   // calling recursively the node ctor on line 24
+        }                                                   // calling recursively the node ctor on line 24
     }
     //  cp assignment
-    bst& operator=(const bst& x){
+    bst& operator=(const bst& x) noexcept{
         auto tmp{x};                 // construct a copy of x
         *(this) = std::move(tmp);    // move it into myself
         return *this;                // return myself
@@ -255,12 +263,11 @@ public: // BST INTERFACE
         // we traverse the bst until tmp is nullptr
         while (tmp)     
         {
-            if(tmp->_pair.first == x){  // found it
+            if(!cmp(tmp->_pair.first,x) && !cmp(x,tmp->_pair.first)){  // found it  
                 return iterator{tmp};
             }
             else{
                 // otherwise move to the right or left child
-                auto cmp = OP{};
                 if( cmp(tmp->_pair.first,x) ){
                     tmp = tmp->right.get();
                 }
@@ -275,12 +282,11 @@ public: // BST INTERFACE
         // we traverse the bst until tmp is nullptr
         while (tmp)     
         {
-            if(tmp->_pair.first == x){  // found it
+            if(!cmp(tmp->_pair.first,x) && !cmp(x,tmp->_pair.first)){  // found it
                 return iterator{tmp};
             }
             else{
                 // otherwise move to the right or left child
-                auto cmp = OP{};
                 if( cmp(tmp->_pair.first,x) ){
                     tmp = tmp->right.get();
                 }
@@ -307,7 +313,7 @@ public: // BST INTERFACE
     void balance(){
         std::vector<std::pair<k_t,v_t>> ordered;
 
-        // fullfill ordered with inorder elements of the bst
+        // fill ordered with inorder elements of the bst
         for(iterator i = begin(); i != end() ; ++i){
             ordered.emplace_back(*i, i.value());
         }
@@ -341,39 +347,20 @@ public: // BST INTERFACE
         return tmp; 
     }
 
-    bool _is_empty()const noexcept {return head == nullptr;}
+    bool _is_empty() const noexcept {return head == nullptr;}
 
     // ERASE
     void erase(const k_t& x){
     
         if(find(x)!=iterator{nullptr}){         // check that the key is present in the bst
-            auto cmp = OP{};
-            auto tmp = head.get();              // auxiliary variable to traverse top-bottom the bst
-            node* starting_node = head.get();   // ptr to the node we must delete
-
-            // look for it
-            bool still_looking = true;
-            while (still_looking)     
-            {
-                if(tmp->_pair.first == x){  // found it
-                    starting_node = tmp;
-                    still_looking = false;
-                }
-                else{
-                    // otherwise move to the right or left child
-                    if( cmp(tmp->_pair.first,x) ){
-                        tmp = tmp->right.get();
-                    }
-                    else{ tmp = tmp->left.get();}
-                }
-            }
+            node* starting_node = find(x).where();
 
             // starting_node is now pointing to
             // the node we want to delete; let's cover all the 
             // possible cases
 
             // CASE ONE: THE NODE IS A LEAF
-            if(!starting_node->left && !starting_node->right){  // check the node has no children
+            if(!starting_node->left && !starting_node->right){                         // check the node has no children
                 auto key_of_parent = starting_node->parent->_pair.first;
                 auto parent = starting_node->parent;
                 // we release and reset the pointer of the parent node
@@ -387,12 +374,11 @@ public: // BST INTERFACE
             {
                 if(starting_node->left){                                // if the child is on the left
                     auto left_child = starting_node->left.release();    // ptr to the unique child
-                    starting_node->left.reset();
                     auto parent = starting_node->parent;                // ptr to parent node
 
                     auto key_of_parent = parent->_pair.first;
                     if(cmp(x,key_of_parent)){parent->left.release();parent->left.reset(left_child); left_child->parent = parent;}  // if the starting node is on the left of its parent
-                    else{parent->right.release();parent->right.reset(left_child); left_child->parent = parent;}                     // otherwise on the right
+                    else{parent->right.release();parent->right.reset(left_child); left_child->parent = parent;}                    // otherwise on the right
                 }
                 else{                                                   // if the child is on the right
                     auto right_child = starting_node->right.release();  // ptr to unique child
@@ -406,7 +392,6 @@ public: // BST INTERFACE
 
             // LAST CASE: THE NODE HAS TWO CHILDREN
             if(starting_node->left && starting_node->right){
-                
                 // find the right most node between nodes
                 // that are on the right of the node we must delete
                 // and exchange key and value; then delete the old node
@@ -416,9 +401,8 @@ public: // BST INTERFACE
                 while(swap_node->left){                           
                     swap_node = swap_node->left.get();
                 }
-
                 // exchange keys and values (swap_node is no needed anymore)
-                starting_node->_pair = std::move(swap_node->_pair);
+                starting_node->_pair = swap_node->_pair;
 
                 // since swap_node will now be eliminated we will
                 // reset the ptr that points to it but we have to consider
@@ -431,8 +415,10 @@ public: // BST INTERFACE
                 }
                 // otherwise we must
                 else{
+                    swap_node->right->parent = starting_node;
                     auto tmp = swap_node->right.release();
-                    swap_node->parent->right.reset(tmp);
+                    starting_node->right.reset(tmp);
+
                 }
             }
         }
@@ -504,16 +490,22 @@ int main(){
     test.insert(std::pair<int,int>{13,2});
     test.insert(std::pair<int,int>{14,2});
 
-
     std::cout << "test before copy" << std::endl;
     std::cout << test << std::endl;
 
     test.erase(8);
 
-    std::cout << "\nafter erase\n" << std::endl;
+    std::cout << "\nafter erase 8 \n" << std::endl;
+    std::cout << test << std::endl;
+
+    test.erase(10);
+
+    std::cout << "\nafter erase 10 \n" << std::endl;
     std::cout << test << std::endl;
 
     
+
+
     std::cout << "\ninstanciated a copy of test named cp and using emplace: (2,2) was inserted" << std::endl;
     bst<int,int> cp{test};
     cp.emplace(2,2);
@@ -539,9 +531,9 @@ int main(){
 
     cp.balance();
     std::cout << "after balancing cp" << std::endl;
-    std::cout << cp << "\n" << cp[81] <<  std::endl;
-
+    std::cout << cp << std::endl;
     std::cout << "test\n" << test << std::endl;
-
+    std::cout << "end" << std::endl;
+    
     return 0;
 }
