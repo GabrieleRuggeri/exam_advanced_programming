@@ -19,39 +19,37 @@
 #endif
 
 
-
-template <typename k_t, typename v_t, typename OP = std::less<k_t> >
-class bst{
-
 // NODE STRUCT
-struct node{
-    std::pair<k_t,v_t>    _pair{};
-    std::unique_ptr<node> right{};
-    std::unique_ptr<node> left{};
-    node* parent{nullptr};
+template <typename k_t, typename v_t >
+struct _node{
+    std::pair<k_t,v_t>    _pair;
+    std::unique_ptr<_node> right;
+    std::unique_ptr<_node> left;
+    _node* parent{nullptr};
     // parent can not be a unique_ptr
     // since it points to a node that is the child
     // of some other node and so we would have a conflict
     // for the purpose of the code a raw_ptr is enough              
 
+    _node() = default;
     // the only ctors we need take an std::pair<k_t,v_t> as input
     // the ptrs are okay with default value
-    explicit node(const std::pair<k_t,v_t>& pair) noexcept: _pair(pair) {}           // the implicit conversion is not necessary    
-    explicit node(std::pair<k_t,v_t>&& pair) noexcept: _pair(std::move(pair)) {}     // the implicit conversion is not necessary
+    explicit _node(const std::pair<k_t,v_t>& pair) noexcept: _pair(pair) {}           // the implicit conversion is not necessary    
+    explicit _node(std::pair<k_t,v_t>&& pair) noexcept: _pair(std::move(pair)) {}     // the implicit conversion is not necessary
 
     // this is a custom ctor that takes as input a unique ptr to a node that must me copied
     // and a raw ptr to what it's supposed to be its parent. It is a recursive
     // ctor that will be later used in the copy semantics of the bst
-    explicit node(const std::unique_ptr<node>& x, node* parent)noexcept: _pair{x->_pair}, parent{parent}{
+    explicit _node(const std::unique_ptr<_node>& x, _node* parent)noexcept: _pair{x->_pair}, parent{parent}{
             // take care of left and right children:
             // on the right:
             if(x->right){
-                right.reset(new node{x->right,&*this});     // the children of the node have the node itself as parent
+                right.reset(new _node{x->right,&*this});     // the children of the node have the node itself as parent
             }
             else{right.reset();}                            // for sake of completeness
             // on the left:
             if(x->left){
-                left.reset(new node{x->left,&*this});
+                left.reset(new _node{x->left,&*this});
             }
             else{left.reset();}                             // for sake of compliteness
 
@@ -60,13 +58,21 @@ struct node{
 
     // default destructor is okay since no mem. acquisition appears 
     // in the ctors
-    ~node() = default;
+    ~_node() = default;
 };
+
+
+
+template <typename k_t, typename v_t, typename OP = std::less<k_t> >
+class bst{
+
+
 
 // ITERATOR CLASS
 template <typename O>
 class _iterator{
-    using node = bst<k_t,v_t,OP>::node;
+    //using node = bst<k_t,v_t,OP>::node;
+    using node = _node<k_t,v_t>;
     node* current;
     OP cmp{};
     // our iterator is basically a (raw)ptr to node
@@ -150,11 +156,12 @@ public:
     bool operator!=(const _iterator& a, const _iterator& b) noexcept {return !(a == b);}
 };
 
+    using node = _node<k_t,v_t>;
     // PRIVATE MEMBERS
     std::unique_ptr<node> head;
     // instance of the total relation order that rules the bst
     // this is alway initialized to its standard value
-    OP cmp{}; 
+    OP cmp; 
     // the bst class just needs a (unique)ptr to the head of the tree
 
     using iterator = _iterator<k_t>;
@@ -476,6 +483,8 @@ public: // BST INTERFACE
 
 int main(){
 
+    try{
+
     bst<int,int> test;
     std::cout << "bst after creation" << std::endl;
     std::cout << test << std::endl;
@@ -534,6 +543,11 @@ int main(){
     std::cout << cp << std::endl;
     std::cout << "test\n" << test << std::endl;
     std::cout << "end" << std::endl;
+
+    }
+    catch(std::exception& e){
+        std::cout << e.what() << std::endl;
+    }
     
     return 0;
 }
