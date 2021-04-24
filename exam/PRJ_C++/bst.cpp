@@ -3,20 +3,8 @@
 #include <memory>
 #include <iterator>
 #include <vector>
-#include <assert.h>
 
-#ifndef NDEBUG
-#   define ASSERT(condition, message) \
-    do { \
-        if (! (condition)) { \
-            std::cerr << "Assertion `" #condition "` failed in:\nFILE : " << __FILE__ \
-                      << "\nLINE : " << __LINE__ << "\nERROR : " << message << std::endl; \
-            std::terminate(); \
-        } \
-    } while (false)
-#else
-#   define ASSERT(condition, message) do { } while (false)
-#endif
+
 
 
 // NODE STRUCT
@@ -25,7 +13,7 @@ struct _node{
     std::pair<k_t,v_t>    _pair;
     std::unique_ptr<_node> right;
     std::unique_ptr<_node> left;
-    _node* parent{nullptr};
+    _node* parent;
     // parent can not be a unique_ptr
     // since it points to a node that is the child
     // of some other node and so we would have a conflict
@@ -33,7 +21,6 @@ struct _node{
 
     _node() = default;
     // the only ctors we need take an std::pair<k_t,v_t> as input
-    // the ptrs are okay with default value
     explicit _node(const std::pair<k_t,v_t>& pair) noexcept: _pair(pair) {}           // the implicit conversion is not necessary    
     explicit _node(std::pair<k_t,v_t>&& pair) noexcept: _pair(std::move(pair)) {}     // the implicit conversion is not necessary
 
@@ -42,6 +29,7 @@ struct _node{
     // ctor that will be later used in the copy semantics of the bst
     explicit _node(const std::unique_ptr<_node>& x, _node* parent)noexcept: _pair{x->_pair}, parent{parent}{
             // take care of left and right children:
+
             // on the right:
             if(x->right){
                 right.reset(new _node{x->right,&*this});     // the children of the node have the node itself as parent
@@ -56,8 +44,7 @@ struct _node{
             // the idea is to call recursively the ctor (of node) on every side untill we meet a nullptr
         }
 
-    // default destructor is okay since no mem. acquisition appears 
-    // in the ctors
+    // default destructor is okay since no mem. acquisition occour
     ~_node() = default;
 };
 
@@ -66,16 +53,13 @@ struct _node{
 template <typename k_t, typename v_t, typename OP = std::less<k_t> >
 class bst{
 
-
-
 // ITERATOR CLASS
 template <typename O>
 class _iterator{
-    //using node = bst<k_t,v_t,OP>::node;
+    
     using node = _node<k_t,v_t>;
-    node* current;
-    OP cmp{};
-    // our iterator is basically a (raw)ptr to node
+    node* current;              // iterator is basically a (raw)ptr to node
+
 
 public:
     using value_type = O;
@@ -84,49 +68,49 @@ public:
     using reference = value_type&;
     using pointer = value_type*;
 
+    _iterator() = default;
     explicit _iterator(node* x) noexcept: current{x} {}  // the implicit conversion is not necessary
     ~_iterator() = default;
 
     // overloading of pre-increment operator:
-    _iterator& operator++() noexcept{
-        k_t starting_key = **this; // the key of the node the iterator points to before it is increased           
+    _iterator& operator++() noexcept{          
 
         // the iterator must increase such that when we traverse the bst
-        // we do in a way such that the keys appear ordered (wrt to OP)
+        // we do in a way in which the keys appear ordered (wrt to OP)
 
         // the base idea is that the next node in the bst
         // is always on the right of the current one.
 
         // first case: the current node has a right child:
         // we move into it and then visit all the left child nodes so that the final one
-        // will be the node with the smallest key that is also bigger than the key
-        // of the node we started from
+        // will be the node with the smallest key in the sub-tree
+        // and that is also bigger than the key of the node we started from
         if(current->right){
             current = current->right.get();                      // mv into right child
             while(current->left){
                 current = current->left.get();                   // traverse left child nodes
             } 
         }
+        
         // second case: the current node has no right child:
         // we visit back the parent node until either we meet
         // a node whose key is bigger or; if the starting node
         // is the right most one we return nullptr
         // (it has no next node so the output iterator is the same as end() output)
         else{
-            // if current is the root node in a bst with just no right child
+            // if current is the root node in a bst with no right child
             if(!current->parent){current = nullptr; return *this;}
-            // otherwise current is not the root
-            current = current->parent;                           // mv into parent node
-                while(cmp(current->_pair.first,starting_key))    // repeat until a bigger key is met
-                {
-                    if(!(current->parent)){                      // this covers the case in which
-                        current = nullptr;                       //  the starting node is the right most one
-                        break;
-                        }
+            
+            auto tmp = current->parent;
 
-                    current = current->parent;                   // recursively visit back the parent node
-                }
+            while( tmp && current != tmp->left.get()){
+                current = tmp;
+                tmp = tmp->parent;
+            }
+
+            current = tmp;
         } 
+
         return *this;
     }
 
@@ -160,7 +144,6 @@ public:
     // PRIVATE MEMBERS
     std::unique_ptr<node> head;
     // instance of the total relation order that rules the bst
-    // this is alway initialized to its standard value
     OP cmp; 
     // the bst class just needs a (unique)ptr to the head of the tree
 
@@ -528,6 +511,8 @@ int main(){
     std::cout << test << std::endl;
     std::cout << "test[50] = " << test[50] << std::endl;
     std::cout << "test after test[50]" << std::endl;
+    std::cout << "test[3] = " << test[3] << std::endl;
+    std::cout << "test after test[3]" << std::endl;
     std::cout << test << std::endl;
 
     std::cout << "cp after all" << std::endl;
@@ -546,7 +531,7 @@ int main(){
 
     }
     catch(std::exception& e){
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
     }
     
     return 0;
