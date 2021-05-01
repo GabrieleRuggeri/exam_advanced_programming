@@ -1,19 +1,18 @@
 def reverse_dict(d):
-    def KeysOfItem(item, dict = d)-> list:
-        keys = []
-        for k in dict.keys():
-            if item in dict[k]:
-                keys.append(k)
-        return keys
-
+    """
+    given an input dict return the reverse dict
+    where the new keys v are the unrepeated values of the input dict
+    and the values k are the keys of the input dict such that v was in d[k]
+    """
+    
     val = set()
     for v in d.values():
         tmp = set(v)
         val.update(tmp)
 
-
-    rev = {v:KeysOfItem(v) for v in val}
+    rev = {v:[k for k in d.keys() if v in d[k]] for v in  val}
     return rev
+    
 
 
 def test_reverse_small_dict():
