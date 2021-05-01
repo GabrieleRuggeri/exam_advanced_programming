@@ -4,7 +4,7 @@
 The code provided implements a templated **binary search tree** and two auxiliary classes: **node** and **iterator**. The source files are in the `src` while the main file is `main.cpp`, in which some tests are performed to ensure the correctness of the code. To compile it's enough to use the `make` command.
 For a more detailed documentation check the Doxygen generated files (pdf and html). 
 
-## Implemenation Details
+## Implementation Details
 The binary search tree stores pairs of `key` and `value`, respectively templated on two different types, and the pairs are ordered with respect to a total order relation templated on `OP`.
 
 ## Auxiliary classes:
@@ -19,7 +19,7 @@ To store the pairs a new struct was defined: `node`
 Moreover I defined both the default constructor and destructor and two custom constructor; the first one for creating a node given a pair while the second one is an auxiliary constructor that is invoked in the copy semamtics of the bst. 
 
 ### Iterator
-A simple implementation of a `forward iterator`, defnied as class, to traverse the tree inorder.
+A simple implementation of a `forward iterator`, defined as class, to traverse the tree inorder.
 ### private members
 - a pointer to a node
 ### public interface
