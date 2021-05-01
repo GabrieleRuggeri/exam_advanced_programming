@@ -158,11 +158,6 @@ class bst{
 public: 
     
     /**
-     * @brief Interface of the BST
-     * 
-     */
-    
-    /**
      * @brief Default ctor
      * 
      */ 
@@ -174,10 +169,7 @@ public:
      */
     ~bst() noexcept = default;
 
-    /**
-     * @brief Move semantics
-     * 
-     */
+
 
     /**
      * @brief Move ctor 
@@ -193,11 +185,7 @@ public:
         return *this;
     }
     
-    /**
-     * @brief Copy semantics
-     * 
-     * @param x 
-     */
+
     
     /**
      * @brief Copy ctor
