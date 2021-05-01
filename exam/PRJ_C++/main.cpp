@@ -4,7 +4,7 @@
 
 int main(){
 
-    try{
+
 
     bst<int,int> test;
     std::cout << "bst after creation" << std::endl;
@@ -67,10 +67,6 @@ int main(){
     std::cout << "test\n" << test << std::endl;
     std::cout << "end" << std::endl;
 
-    }
-    catch(std::exception& e){
-        std::cerr << e.what() << std::endl;
-    }
     
     return 0;
 }
