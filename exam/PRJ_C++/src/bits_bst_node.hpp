@@ -47,7 +47,7 @@ struct _node{
     /**
      * @brief Default ctor
      */
-    _node() = default;
+    _node() noexcept = default;
     
     /**
      * @brief Curstom ctor, no implicit conversion
@@ -94,7 +94,7 @@ struct _node{
      * @brief Default dtor
      * 
      */
-    ~_node() = default;
+    ~_node() noexcept = default;
 };
 
 #endif
