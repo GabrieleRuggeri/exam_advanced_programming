@@ -463,7 +463,7 @@ public:
      */
     friend
     std::ostream& operator<<(std::ostream& os, const bst& x){
-        if(x._is_empty()){std::cerr << "ERROR: --EMPTY BST--\n"; return os;}
+        if(x._is_empty()){os << "WARNING: empty tree"; return os;}
 
         for(auto& key : x){
             os << key << " ";
