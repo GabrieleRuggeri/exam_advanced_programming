@@ -20,8 +20,26 @@ int main(){
     test.insert(std::pair<int,int>{13,2});
     test.insert(std::pair<int,int>{14,2});
 
-    std::cout << "test before copy" << std::endl;
+    std::cout << "test" << std::endl;
     std::cout << test << std::endl;
+
+
+    bst<int,int> cp_ctor{test};
+    std::cout << "\nbst build by cp ctor\n"
+              << cp_ctor << std::endl;
+
+    bst<int,int> cp_as = test;
+    std::cout << "\nbst build by cp as\n"
+              << cp_as << std::endl;
+
+    bst<int,int> mv_ctor{std::move(cp_ctor)};
+    std::cout << "\nbst build by mv ctor\n"
+              << mv_ctor << std::endl;
+
+    bst<int,int> mv_as = std::move(cp_as);
+    std::cout << "\nbst build by mv as\n"
+              << mv_as << std::endl;
+
 
     test.erase(8);
 
@@ -36,7 +54,7 @@ int main(){
     
 
 
-    std::cout << "\ninstanciated a copy of test named cp and using emplace: (2,2) was inserted" << std::endl;
+    std::cout << "\ninstanciated a copy of test named cp and using emplace (2,2) was inserted" << std::endl;
     bst<int,int> cp{test};
     cp.emplace(2,2);
 
