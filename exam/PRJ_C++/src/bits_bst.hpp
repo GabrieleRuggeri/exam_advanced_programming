@@ -122,13 +122,15 @@ class bst{
      * @brief Auxiliary function to balance the tree.
      * 
      * 
-     * @param v an std::vector
+     * @param v an std::vector of pairs
      * @param start first index
      * @param end last index
      * @param parent pointer to the parent node
      * @return pointer to the node with the median element 
      */
-    node* balancing(std::vector<std::pair<k_t,v_t>> v, int start, int end, node* parent){
+
+    template <typename P>
+    node* balancing(std::vector<P> v, int start, int end, node* parent){
         // Base Case 
         if (start > end) 
         return nullptr; 
@@ -179,7 +181,7 @@ public:
     /**
      * @brief Move assignment
      */
-    bst& operator==(bst&& x) noexcept{
+    bst& operator=(bst&& x) noexcept{
         head = std::move(x.head);
         cmp = std::move(x.cmp);
         return *this;
@@ -195,7 +197,7 @@ public:
         if(x.head){    
             cmp = x.cmp;                 
             head.reset(new node{x.head, x.head->parent});   // as far as x is not an empty bst I copy it by
-        }                                                   // calling recursively the node ctor on line 24
+        }                                                   // calling recursively the node ctor
     }
 
 
