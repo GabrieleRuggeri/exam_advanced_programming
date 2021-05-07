@@ -288,7 +288,7 @@ public:
         while (tmp)     
         {
             if(!cmp(tmp->_pair.first,x) && !cmp(x,tmp->_pair.first)){  // found it
-                return iterator{tmp};
+                return const_iterator{tmp};
             }
             else{
                 // otherwise move to the right or left child
@@ -326,7 +326,7 @@ public:
      * @param x pair to be inserted
      * @return a pair of an iterator (pointing to the node) and a bool
      */
-    std::pair<iterator, bool> insert(std::pair<const k_t, v_t>&& x) {return _insert(std::move(x));}
+    std::pair<iterator, bool> insert(std::pair<k_t, v_t>&& x) {return _insert(std::move(x));}
 
 
 
@@ -339,7 +339,7 @@ public:
      */
     template <typename... Types >
     std::pair<iterator,bool> emplace(Types&&... args){                      // emplace just needs to construct
-        return insert(std::pair<k_t,v_t>{std::forward<Types>(args)...});    // an std::pair and call insert
+        return _insert(std::pair<k_t,v_t>{std::forward<Types>(args)...});   // an std::pair and call insert
     }
 
     /**
@@ -363,7 +363,7 @@ public:
         std::vector<std::pair<k_t,v_t>> ordered;
 
         // fill ordered with inorder elements of the bst
-        for(iterator i = begin(); i != end() ; ++i){
+        for(const_iterator i = cbegin(); i != cend() ; ++i){
             ordered.emplace_back(*i, i.value());
         }
         
