@@ -21,11 +21,12 @@
 template <typename O, typename k_t, typename v_t>
 class _iterator{
     
+    using node = _node<k_t,v_t>;
+
     /**
      * @brief pointer to the node
      * 
      */
-    using node = _node<k_t,v_t>;
     node* current;              // iterator is basically a (raw)ptr to node
 
 
@@ -90,8 +91,6 @@ public:
              * (it has no next node so the output iterator is the same as end())
              */
         else{
-            // if current is the root node in a bst with no right child
-            if(!current->parent){current = nullptr; return *this;}
             
             // otherwise
             auto tmp = current->parent;
@@ -143,7 +142,7 @@ public:
     const v_t& value() const {return current->_pair.second;}
 
     /**
-     * @return a poninter to the current node 
+     * @return a pointer to the current node 
      */
     node* where() const noexcept{return current;}
 
