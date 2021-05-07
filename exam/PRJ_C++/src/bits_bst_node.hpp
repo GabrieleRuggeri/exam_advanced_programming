@@ -85,7 +85,7 @@ struct _node{
             if(x->left){
                 left.reset(new _node{x->left,&*this});
             }
-            else{left.reset();}                             // for sake of compliteness
+            else{left.reset();}                             // for sake of completeness
 
             // the idea is to call recursively the ctor (of node) on every side untill we meet a nullptr
         }
