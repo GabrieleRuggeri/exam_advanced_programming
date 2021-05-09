@@ -66,7 +66,7 @@ struct _node{
     explicit _node(std::pair<k_t,v_t>&& pair) noexcept: _pair(std::move(pair)) {}     
 
     /**
-     * Curstom ctor that takes as input a unique ptr to a node that must me copied
+     * Custom ctor that takes as input a unique ptr to a node that must me copied
      * and a raw ptr to what it's supposed to be its parent. It is a recursive
      * ctor that will be later used in the copy semantics of the bst
      * 
@@ -78,7 +78,7 @@ struct _node{
 
             // on the right:
             if(x->right){
-                right.reset(new _node{x->right,&*this});     // the children of the node have the node itself as parent
+                right.reset(new _node{x->right,&*this});    // the children of the node have the node itself as parent
             }
             else{right.reset();}                            // for sake of completeness
             // on the left:
