@@ -96,7 +96,7 @@ public:
             auto tmp = current->parent;
 
             while( tmp && current != tmp->left.get()){
-                current = tmp;
+                // current = tmp;
                 tmp = tmp->parent;
             }
 
@@ -134,7 +134,7 @@ public:
     /**
      * @return a reference to the value of the key of the pointed node 
      */
-    v_t& value() {return current->_pair.second;}
+    v_t& value() const {return current->_pair.second;}
 
     /**
      * @return a const reference to the value of the key of the pointed node
@@ -144,7 +144,7 @@ public:
     /**
      * @return a pointer to the current node 
      */
-    node* where() const noexcept{return current;}
+    node* const where() const noexcept{return current;}
 
     /**
      * @brief Overload of == operator
