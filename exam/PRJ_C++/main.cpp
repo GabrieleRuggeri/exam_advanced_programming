@@ -20,10 +20,10 @@ int main(){
     test.insert(std::pair<int,int>{13,2});
     test.insert(std::pair<int,int>{14,2});
 
-    std::cout << "test" << std::endl;
+    std::cout << "\ntest after insertions" << std::endl;
     std::cout << test << std::endl;
 
-
+    std::cout << "\nTESTS ON COPY AND MOVE SEM:" << std::endl;
     bst<int,int> cp_ctor{test};
     std::cout << "\nbst build by cp ctor\n"
               << cp_ctor << std::endl;
@@ -40,14 +40,13 @@ int main(){
     std::cout << "\nbst build by mv as\n"
               << mv_as << std::endl;
 
+    std::cout << "\nTESTS ON ERASE:" << std::endl;
 
     test.erase(8);
-
     std::cout << "\nafter erase 8 \n" << std::endl;
     std::cout << test << std::endl;
 
     test.erase(10);
-
     std::cout << "\nafter erase 10 \n" << std::endl;
     std::cout << test << std::endl;
 
@@ -60,30 +59,38 @@ int main(){
 
     std::cout << "cp" << std::endl;
     std::cout << cp << std::endl;
+
     std::cout << "test after insertion in cp" << std::endl;
     std::cout << test << std::endl;
+
+    std::cout << "\nTESTS ON SUBSCRIPTING OPERATOR:" << std::endl;
     std::cout << "test[8] = " << test[8] << std::endl;
     std::cout << "test after test[8]" << std::endl;
-    std::cout << test << std::endl;
+    std::cout << test << "\n"<< std::endl;
     std::cout << "test[50] = " << test[50] << std::endl;
     std::cout << "test after test[50]" << std::endl;
+    std::cout << test << "\n"<< std::endl;
     std::cout << "test[3] = " << test[3] << std::endl;
     std::cout << "test after test[3]" << std::endl;
     std::cout << test << std::endl;
 
-    std::cout << "cp after all" << std::endl;
+    std::cout << "\ncp after all" << std::endl;
     std::cout << cp << std::endl;
 
-
+    
+    std::cout << "\nTESTS ON CLEAR:" << std::endl;
     test.clear();
     std::cout << "after clear() on test" << std::endl;
     std::cout << "test\n" << test << "\ncp\n" << cp << std::endl;
 
+
+    std::cout << "\nTESTS ON BALANCE:" << std::endl;
     cp.balance();
     std::cout << "after balancing cp" << std::endl;
     std::cout << cp << std::endl;
-    std::cout << "test\n" << test << std::endl;
-    std::cout << "end" << std::endl;
+
+
+    std::cout << "\n\n\nEND TESTS" << std::endl;
 
     
     return 0;
