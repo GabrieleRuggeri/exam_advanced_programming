@@ -4,13 +4,8 @@ def reverse_dict(d):
     where the new keys v are the unrepeated values of the input dict
     and the values k are the keys of the input dict such that v was in d[k]
     """
-    
-    val = set()
-    for v in d.values():
-        tmp = set(v)
-        val.update(tmp)
 
-    rev = {v:[k for k in d.keys() if v in d[k]] for v in  val}
+    rev = {v:[k for k in d.keys() if v in d[k]] for v in set( j for i in d.values() for j in i) }
     return rev
     
 
