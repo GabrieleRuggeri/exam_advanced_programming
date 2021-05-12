@@ -12,7 +12,7 @@
  * It is a subclass of the bst.
  * It contains a raw pointer to a node
  * 
- * @tparam O template fot the iterator
+ * @tparam O template for the iterator
  * @tparam k_t template for the key type of node
  * @tparam v_t template for the value type of node
  */
