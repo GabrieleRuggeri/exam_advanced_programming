@@ -137,7 +137,7 @@ class bst{
   
         // Get the median element and make a node out of it (head)
         int median = (start + end)/2; 
-        node* tmp = new node(v[median]); 
+        node* tmp = new node{v[median]}; 
         tmp->parent = parent;
 
 
