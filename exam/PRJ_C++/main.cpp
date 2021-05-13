@@ -17,8 +17,8 @@ int main(){
     test.insert(std::pair<int,int>{4,2});
     test.insert(std::pair<int,int>{7,2});
     test.insert(std::pair<int,int>{10,2});
-    test.insert(std::pair<int,int>{13,2});
     test.insert(std::pair<int,int>{14,2});
+    test.insert(std::pair<int,int>{13,2});
 
     std::cout << "\ntest after insertions" << std::endl;
     std::cout << test << std::endl;
