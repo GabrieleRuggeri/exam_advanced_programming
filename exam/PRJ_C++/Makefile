@@ -1,5 +1,5 @@
 MAIN = main.x
-CXX = c++
+CXX = g++
 CXXFLAGS = -Isrc -Wall -Wextra -std=c++14 
 OPTIMIZATION = -O3
 
