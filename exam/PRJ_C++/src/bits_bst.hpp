@@ -514,8 +514,8 @@ public:
         // otherwise we insert a new node with the
         // requested key and the default value of v_t
         auto def_value = v_t{};
-        emplace(x,def_value);
-        auto address = find(x);
+        emplace(tmp,def_value);
+        auto address = find(tmp);
         return address.value();
     }
 
