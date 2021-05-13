@@ -442,12 +442,25 @@ public:
                 // swap_node is not the right child of the deleted node,
                 // in this case 
                 if(swap_node->parent != starting_node){
-                    auto tmp = swap_node->right.release(); // swap_node may have a right subtree
+                    if(swap_node->right){            
+                        // if swap_node has a right child it will be
+                        // attached to the parent of swap_node
+                        // and so it will have a new parent
+                        swap_node->right->parent = swap_node->parent;
+                    }
+
+                    auto tmp = swap_node->right.release(); 
                     swap_node->parent->left.reset(tmp);    // attach the subtree to the parent
                 }
                 // otherwise we must
                 else{
-                    swap_node->right->parent = starting_node;
+                    if(swap_node->right){  
+                        // if swap_node has a right child it will be
+                        // attached to the starting_node
+                        // and so it will have a new parent                
+                        swap_node->right->parent = starting_node;
+                    }
+
                     auto tmp = swap_node->right.release();
                     starting_node->right.reset(tmp);
 
