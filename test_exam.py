@@ -1,4 +1,4 @@
-def reverse_dict(d):
+def reverse_dict(d: dict) -> dict:
     """
     given an input dict return the reverse dict
     where the new keys v are the unrepeated values of the input dict
