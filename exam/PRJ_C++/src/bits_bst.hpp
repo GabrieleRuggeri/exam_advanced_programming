@@ -311,7 +311,7 @@ public:
      * The bool is true if a new node has been allocated,
      * false otherwise (i.e., the key was already present in the tree)
      * 
-     * @param x pair to be inserted
+     * @param x l-value ref to the pair to be inserted
      * @return a pair of an iterator (pointing to the node) and a bool
      */
     std::pair<iterator, bool> insert(const std::pair<k_t, v_t>& x)  {return _insert(x);}
@@ -323,7 +323,7 @@ public:
      * The bool is true if a new node has been allocated,
      * false otherwise (i.e., the key was already present in the tree)
      * 
-     * @param x pair to be inserted
+     * @param x r-value ref to the pair to be inserted
      * @return a pair of an iterator (pointing to the node) and a bool
      */
     std::pair<iterator, bool> insert(std::pair<k_t, v_t>&& x) {return _insert(std::move(x));}
@@ -504,9 +504,8 @@ public:
         // otherwise we insert a new node with the
         // requested key and the default value of v_t
         auto def_value = v_t{};
-        emplace(x,def_value);
-        auto address = find(x);
-        return address.value();
+        auto new_node = emplace(x,def_value);
+        return new_node.first.value();
     }
     
 
@@ -527,9 +526,8 @@ public:
         // otherwise we insert a new node with the
         // requested key and the default value of v_t
         auto def_value = v_t{};
-        emplace(tmp,def_value);
-        auto address = find(tmp);
-        return address.value();
+        auto new_node = emplace(tmp,def_value);
+        return new_node.first.value();
     }
 
 };
