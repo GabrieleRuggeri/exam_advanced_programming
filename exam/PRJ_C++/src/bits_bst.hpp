@@ -45,7 +45,7 @@ class bst{
     /**
      * This private function will be usefull to define
      * begin
-     * @return iterator to the node with the smalles key (wrt OP)
+     * @return iterator to the node with the smallest key (wrt OP)
      */
     iterator left_most() noexcept {                            
         auto tmp = head.get();                      
@@ -59,7 +59,7 @@ class bst{
     /**
      * This private function will be usefull to define
      * cbegin
-     * @return const_iterator to the node with the smalles key (wrt OP)
+     * @return const_iterator to the node with the smallest key (wrt OP)
      */
     const_iterator left_most() const noexcept {
         auto tmp = head.get();
@@ -216,7 +216,7 @@ public:
      * 
      * @return iterator to the left most node
      */
-    iterator begin(){return left_most();}
+    iterator begin() noexcept {return left_most();}
 
     /**
      * @brief Retrieve the left most node.
@@ -224,7 +224,7 @@ public:
      * 
      * @return const_iterator to the left most node
      */
-    const_iterator begin() const {return left_most();}
+    const_iterator begin() const noexcept {return left_most();}
 
     /**
      * @brief Retrieve the left most node.
@@ -232,22 +232,22 @@ public:
      * 
      * @return const_iterator to the left most node
      */
-    const_iterator cbegin() const {return left_most();}
+    const_iterator cbegin() const noexcept {return left_most();}
     
     /**
      * @return iterator to one past the last node
      */
-    iterator end(){return iterator{nullptr};}
+    iterator end() noexcept {return iterator{nullptr};}
 
     /**
      * @return const_iterator to one past the last node
      */
-    const_iterator end() const {return const_iterator{nullptr};}
+    const_iterator end() const noexcept {return const_iterator{nullptr};}
 
     /**
      * @return const_iterator to one past the last node
      */
-    const_iterator cend() const {return const_iterator{nullptr};}
+    const_iterator cend() const noexcept {return const_iterator{nullptr};}
 
 
     /**
