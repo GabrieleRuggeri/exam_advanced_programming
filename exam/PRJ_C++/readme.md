@@ -1,7 +1,7 @@
 # Binary Search Tree
 ### Gabriele Ruggeri
 
-The code provided implements a templated **binary search tree** and two auxiliary classes: **node** and **iterator**. The source files are in the `src` while the main file is `main.cpp`, in which some tests are performed to ensure the correctness of the code. To compile it's enough to use the `make` command.
+The code provided implements a templated **binary search tree** and two auxiliary classes: **node** and **iterator**. The source files are in the `src` folder while the main file is `main.cpp`, in which some tests are performed to ensure the correctness of the code. To compile it's enough to use the `make` command.
 For a more detailed documentation check the Doxygen generated files (pdf and html). 
 
 ## Implementation Details
