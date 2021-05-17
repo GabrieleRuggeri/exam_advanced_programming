@@ -80,26 +80,30 @@ class bst{
      */
     template <typename O>
     std::pair<iterator, bool> _insert(O&& x){
-        auto pair = std::forward<O>(x);
+        // auto pair = std::forward<O>(x);
         auto tmp = head.get();
-        auto new_node{new node{pair}};
+        
 
+        if (find(x.first)!=iterator{nullptr}){                      // check if a node with the same key is already present
+            
+            return std::pair<iterator, bool>{find(x.first), false}; // if so return an iterator to that node and flag the insertion as aborted
+        }
+
+        auto new_node{new node{std::forward<O>(x)}};
+
+        
         // base case: empty bst - no check must be performed
         if(!head){
             head.reset(new_node);
             return std::pair<iterator, bool>{iterator{new_node},true};
         }
         
-        if (find(pair.first)!=iterator{nullptr}){                      // check if a node with the same key is already present
-            return std::pair<iterator, bool>{find(pair.first), false}; // if so return an iterator to that node and flag the insertion as aborted
-        }
-
         // if we didn't return yet
         // we are sure that we will insert a new node
         else{
             while(tmp){                                  // traverse the bst top to bottom until we get to the leaves
                 new_node->parent = tmp;                  // at every step take note of the "momentaneous" parent (we don't know when the loop ends)
-                if( cmp(tmp->_pair.first, pair.first) ){ // explore the two possible cases for the new key
+                if( cmp(tmp->_pair.first, x.first) ){ // explore the two possible cases for the new key
                     if(!tmp->right.get()){               // if we reach a leaf
                         tmp->right.reset(new_node);      // attach the new node
                         tmp = nullptr;                   // to end the loop
@@ -384,7 +388,7 @@ public:
      */
     void erase(const k_t& x) noexcept {
     
-        if(find(x)!=iterator{nullptr}){         // check that the key is present in the bst
+        if(find(x)!=iterator{nullptr}){       // better to have ... != end()  // check that the key is present in the bst
             node* starting_node = find(x).where();
 
             // starting_node is now pointing to
